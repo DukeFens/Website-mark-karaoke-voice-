@@ -1,0 +1,99 @@
+# =========================
+# 📦 Python / AI Project Gitignore
+# =========================
+
+# --- Virtual Environments ---
+venv/
+.env/
+env/
+beat_eval_system/venv/
+*/venv/
+*/.env/
+
+# --- Python Compiled Files ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Build / Packaging ---
+build/
+dist/
+*.egg-info/
+.eggs/
+*.manifest
+*.spec
+
+# --- Logs / Debug Files ---
+*.log
+logs/
+*.out
+*.err
+
+# --- IDE / Editor Configs ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- Large Binary or Data Files ---
+*.dll
+*.exe
+*.bin
+*.dat
+*.h5
+*.ckpt
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.npy
+*.npz
+*.wav
+*.mp3
+*.mp4
+*.avi
+
+# --- Temporary / Cache Files ---
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.cache/
+.ipynb_checkpoints/
+__MACOSX/
+
+# --- Jupyter Notebook Checkpoints ---
+.ipynb_checkpoints/
+
+# --- Model or Dataset Directories ---
+models/
+checkpoints/
+runs/
+output/
+outputs/
+results/
+data/
+datasets/
+temp/
+tmp/
+
+# --- Environment / Secrets ---
+.env.local
+.env.production
+.env.development
+*.secret
+*.key
+*.pem
+*.json
+
+# --- Project-specific ignores ---
+# (add your custom folders here if needed)
+beat_eval_system/__pycache__/
+beat_eval_system/temp/
+beat_eval_system/output/
