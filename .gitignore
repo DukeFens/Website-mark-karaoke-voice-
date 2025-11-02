@@ -75,7 +75,6 @@ __MACOSX/
 models/
 checkpoints/
 runs/
-output/
 outputs/
 results/
 data/
@@ -95,5 +94,3 @@ tmp/
 # --- Project-specific ignores ---
 # (add your custom folders here if needed)
 beat_eval_system/__pycache__/
-beat_eval_system/temp/
-beat_eval_system/output/
