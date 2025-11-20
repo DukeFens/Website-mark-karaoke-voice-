@@ -4,10 +4,11 @@ import os
 import json
 
 # ==== Import pipeline functions ====
-from main_pipeline import ensure_wav_format, preprocess_audio, extract_features
+from main_pipeline import ensure_wav_format, preprocess_audio
 from beat_transformer_module import process_with_beat_transformer
 from swift_f0_module import process_with_swiftf0
 from alignment_metric_module import run_alignment_metric
+from similarity_score import compute_similarity
 import soundfile as sf
 
 # ==== GUI Class ====
@@ -90,6 +91,10 @@ class BeatEvalGUI:
             # --- Alignment & Metric ---
             metrics = run_alignment_metric(f0_user, f0_ref, y_user=y_user, y_ref=y_ref, beat_times=beat_output["beat_times"])
 
+            # --- Compute similarity %
+            similarity_percent = compute_similarity(metrics)
+            metrics["similarity_percent"] = similarity_percent
+
             # --- Save JSON ---
             output_path = "beat_eval_system/output/result.json"
             def np_convert(o):
@@ -103,9 +108,11 @@ class BeatEvalGUI:
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(metrics, f, indent=4, default=np_convert)
 
+            # --- Display in GUI ---
             self.text_output.insert(tk.END, "✅ Pipeline complete!\n")
             self.text_output.insert(tk.END, f"Results saved to: {output_path}\n\n")
             self.text_output.insert(tk.END, json.dumps(metrics, indent=4, default=np_convert))
+            self.text_output.insert(tk.END, f"\n\n🎯 Similarity: {similarity_percent:.2f}%\n")
 
         except Exception as e:
             messagebox.showerror("❌ Error", str(e))

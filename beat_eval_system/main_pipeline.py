@@ -8,11 +8,10 @@ Tệp `main_pipeline.py` đảm nhiệm vai trò là pipeline trung tâm của h
 Pipeline này tiếp nhận dữ liệu âm thanh đầu vào (file gốc và file người hát lại), tiến hành:
 1. Chuẩn hóa định dạng tệp và tần số lấy mẫu.
 2. Tiền xử lý (cắt khoảng lặng, khử nhiễu, chuẩn hóa âm lượng).
-3. Trích xuất đặc trưng Mel-spectrogram cho mô hình.
-4. Chạy mô hình Beat Transformer (phát hiện nhịp và downbeat).
-5. Chạy mô hình SwiftF0 (trích xuất cao độ).
-6. Thực hiện căn chỉnh và tính toán các chỉ số đánh giá tổng hợp.
-7. Xuất toàn bộ kết quả định lượng ra tệp JSON.
+3. Chạy mô hình Beat Transformer (phát hiện nhịp và downbeat).
+4. Chạy mô hình SwiftF0 (trích xuất cao độ).
+5. Thực hiện căn chỉnh và tính toán các chỉ số đánh giá tổng hợp.
+6. Xuất toàn bộ kết quả định lượng ra tệp JSON.
 """
 
 import os
@@ -23,6 +22,7 @@ import noisereduce as nr
 import json
 from tqdm import tqdm
 import shutil
+from similarity_score import compute_similarity
 
 # ==== 1. XÁC ĐỊNH ĐƯỜNG DẪN INPUT ====
 original_path = "beat_eval_system/input/original.wav"
@@ -63,6 +63,13 @@ def ensure_wav_format(path):
 original_path = ensure_wav_format(original_path)
 record_path = ensure_wav_format(record_path)
 
+# ==== KIỂM TRA FILE RECORD CÓ BỊ RỖNG KHÔNG ====
+if os.path.getsize(record_path) < 1000:  # <1 KB gần như chắc chắn là rỗng
+    raise ValueError(
+        f"❌ File record.wav bị rỗng hoặc hỏng: {record_path}\n"
+        "Vui lòng kiểm tra ứng dụng thu âm hoặc đảm bảo file được ghi đúng."
+    )
+
 print("🎧 Đang đọc tệp gốc:", original_path)
 print("🎤 Đang đọc tệp ghi âm người hát:", record_path)
 
@@ -70,10 +77,6 @@ print("🎤 Đang đọc tệp ghi âm người hát:", record_path)
 def preprocess_audio(path, target_sr=16000):
     """
     Tiền xử lý âm thanh: chuẩn hóa tần số, loại bỏ nhiễu, cân bằng âm lượng.
-
-    Hàm này đảm bảo mọi tệp đầu vào được xử lý theo cùng một chuẩn âm thanh
-    trước khi đưa vào mô hình học máy. Mục tiêu là tạo ra tín hiệu rõ ràng,
-    ổn định về biên độ và tần số lấy mẫu.
 
     Thông số
     --------
@@ -98,16 +101,16 @@ def preprocess_audio(path, target_sr=16000):
     # 2️⃣ Cắt bỏ khoảng lặng ở đầu và cuối
     y, _ = librosa.effects.trim(y, top_db=30)
 
-    # 3️⃣ Khử nhiễu nhẹ (adaptive noise reduction)
+    # 3️⃣ Khử nhiễu nhẹ
     y = nr.reduce_noise(y=y, sr=sr, prop_decrease=0.75, stationary=False)
 
-    # 4️⃣ Chuẩn hóa âm lượng dựa trên RMS
+    # 4️⃣ Chuẩn hóa âm lượng
     rms = np.sqrt(np.mean(y**2))
-    target_rms = 0.1  # ≈ -20 dBFS
+    target_rms = 0.1
     if rms > 0:
         y = y * (target_rms / rms)
 
-    # 5️⃣ Giới hạn biên độ an toàn (tránh clipping)
+    # 5️⃣ Giới hạn biên độ
     y = np.clip(y, -1.0, 1.0)
 
     return y, sr
@@ -117,38 +120,7 @@ def preprocess_audio(path, target_sr=16000):
 y_ref, sr = preprocess_audio(original_path)
 y_user, sr = preprocess_audio(record_path)
 
-
-def extract_features(y, sr):
-    """
-    Trích xuất đặc trưng Mel-spectrogram cho mô hình phân tích.
-
-    Mel-spectrogram giúp mô hình học sâu nhận biết thông tin tần số và năng lượng
-    theo cách tương tự cách con người cảm nhận âm thanh.
-
-    Thông số
-    --------
-    y : np.ndarray  
-        Mảng tín hiệu âm thanh (mono).  
-    sr : int  
-        Tần số lấy mẫu.
-
-    Trả về
-    -------
-    np.ndarray  
-        Ma trận Mel-spectrogram biểu diễn năng lượng theo dB.
-    """
-    S = librosa.feature.melspectrogram(
-        y=y, sr=sr, n_fft=1024, hop_length=256, n_mels=80
-    )
-    S_db = librosa.power_to_db(S, ref=np.max)
-    return S_db
-
-
-# ==== 3. TRÍCH XUẤT ĐẶC TRƯNG ====
-feat_ref = extract_features(y_ref, sr)
-feat_user = extract_features(y_user, sr)
-
-# ==== 4. LƯU CÁC TỆP SAU TIỀN XỬ LÝ ====
+# ==== 4. LƯU TỆP ĐÃ TIỀN XỬ LÝ ====
 os.makedirs("beat_eval_system/output", exist_ok=True)
 orig_pre = "beat_eval_system/output/preprocessed_original.wav"
 rec_pre = "beat_eval_system/output/preprocessed_record.wav"
@@ -157,13 +129,13 @@ sf.write(rec_pre, y_user, sr)
 print("✅ Đã lưu hai tệp âm thanh sau tiền xử lý. Sẵn sàng cho bước mô hình.")
 
 
-# ==== 5. CHẠY MÔ HÌNH BEAT TRANSFORMER ====
+# ==== 5. CHẠY BEAT TRANSFORMER ====
 from beat_transformer_module import process_with_beat_transformer
 beat_output = process_with_beat_transformer(orig_pre)
 print("🎼 Kết quả Beat Transformer:", beat_output)
 
 
-# ==== 6. CHẠY MÔ HÌNH SWIFT-F0 ====
+# ==== 6. CHẠY SWIFT-F0 ====
 from swift_f0_module import process_with_swiftf0
 f0_ref, f0_user = process_with_swiftf0(orig_pre, rec_pre)
 
@@ -181,24 +153,20 @@ result_metrics = run_alignment_metric(
 
 print("📊 Kết quả tính toán & căn chỉnh:", result_metrics)
 
+# ==== TÍNH % SIMILARITY ====
+similarity_percent = compute_similarity(result_metrics)
+print(f"🎯 Similarity giữa bản thu và bản gốc: {similarity_percent:.2f}%")
 
-# ==== 8. LƯU KẾT QUẢ ĐỊNH LƯỢNG ====
+result_metrics["similarity_percent"] = similarity_percent
+
+
+# ==== 8. LƯU JSON ====
 output_path = "beat_eval_system/output/result.json"
 
 
 def np_convert(o):
     """
     Chuyển đổi an toàn các kiểu dữ liệu NumPy sang định dạng JSON hợp lệ.
-
-    Thông số
-    --------
-    o : object  
-        Đối tượng dữ liệu cần chuyển đổi.
-
-    Trả về
-    -------
-    object  
-        Dữ liệu tương thích với định dạng JSON.
     """
     import numpy as np
     if isinstance(o, (np.float32, np.float64, np.int32, np.int64, np.integer)):
