@@ -14,7 +14,6 @@ import torchaudio
 #  https://github.com/w-okada/voice-changer/blob/main/Realtime-Voice-Clone/swift_pitch_extraction.py
 # ============================================================
 
-
 def load_audio_sf(audio_path):
     """
     Đọc tệp WAV bằng thư viện `soundfile` để tránh lỗi codec của Torch trên Windows.
@@ -32,7 +31,6 @@ def load_audio_sf(audio_path):
         y = np.mean(y, axis=1)
     waveform = torch.from_numpy(y).unsqueeze(0).float()
     return waveform, sr
-
 
 def extract_pitch_swift(audio_path, hop_length=160, fmin=50.0, fmax=1100.0):
     """
@@ -61,9 +59,7 @@ def extract_pitch_swift(audio_path, hop_length=160, fmin=50.0, fmax=1100.0):
 
     # --- 3. Xử lý khung im lặng ---
     pitch[pitch == 0] = np.nan  # thay 0 bằng NaN để dễ nhận diện vùng không có tín hiệu
-
     return pitch.squeeze().numpy()
-
 
 def process_with_swiftf0(ref_path, user_path, output_dir="beat_eval_system/output"):
     """
@@ -79,8 +75,6 @@ def process_with_swiftf0(ref_path, user_path, output_dir="beat_eval_system/outpu
             - f0_ref: cao độ mẫu gốc (np.ndarray)
             - f0_user: cao độ bản thu người dùng (np.ndarray)
     """
-    print("🎵 Đang trích xuất cao độ (SwiftF0)...")
-
     os.makedirs(output_dir, exist_ok=True)
     f0_ref = extract_pitch_swift(ref_path)
     f0_user = extract_pitch_swift(user_path)
@@ -89,10 +83,7 @@ def process_with_swiftf0(ref_path, user_path, output_dir="beat_eval_system/outpu
     np.save(os.path.join(output_dir, "f0_ref.npy"), f0_ref)
     np.save(os.path.join(output_dir, "f0_user.npy"), f0_user)
 
-    print("✅ Trích xuất pitch hoàn tất. Kết quả được lưu tại thư mục output/: f0_ref.npy & f0_user.npy")
-
     return f0_ref, f0_user
-
 
 # ============================================================
 #  KIỂM THỬ MODULE TRỰC TIẾP
@@ -102,5 +93,3 @@ if __name__ == "__main__":
         "beat_eval_system/output/preprocessed_original.wav",
         "beat_eval_system/output/preprocessed_record.wav"
     )
-    print("F0 mẫu gốc:", f0_ref[:10])
-    print("F0 bản thu:", f0_user[:10])

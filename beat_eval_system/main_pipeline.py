@@ -58,7 +58,6 @@ def ensure_wav_format(path):
         return wav_path
     return path
 
-
 # Chạy auto convert cho cả hai đầu vào
 original_path = ensure_wav_format(original_path)
 record_path = ensure_wav_format(record_path)
@@ -69,10 +68,6 @@ if os.path.getsize(record_path) < 1000:  # <1 KB gần như chắc chắn là r�
         f"❌ File record.wav bị rỗng hoặc hỏng: {record_path}\n"
         "Vui lòng kiểm tra ứng dụng thu âm hoặc đảm bảo file được ghi đúng."
     )
-
-print("🎧 Đang đọc tệp gốc:", original_path)
-print("🎤 Đang đọc tệp ghi âm người hát:", record_path)
-
 
 def preprocess_audio(path, target_sr=16000):
     """
@@ -112,9 +107,7 @@ def preprocess_audio(path, target_sr=16000):
 
     # 5️⃣ Giới hạn biên độ
     y = np.clip(y, -1.0, 1.0)
-
     return y, sr
-
 
 # Thực hiện tiền xử lý cho cả hai tệp âm thanh
 y_ref, sr = preprocess_audio(original_path)
@@ -126,13 +119,11 @@ orig_pre = "beat_eval_system/output/preprocessed_original.wav"
 rec_pre = "beat_eval_system/output/preprocessed_record.wav"
 sf.write(orig_pre, y_ref, sr)
 sf.write(rec_pre, y_user, sr)
-print("✅ Đã lưu hai tệp âm thanh sau tiền xử lý. Sẵn sàng cho bước mô hình.")
 
 
 # ==== 5. CHẠY BEAT TRANSFORMER ====
 from beat_transformer_module import process_with_beat_transformer
 beat_output = process_with_beat_transformer(orig_pre)
-print("🎼 Kết quả Beat Transformer:", beat_output)
 
 
 # ==== 6. CHẠY SWIFT-F0 ====
@@ -151,18 +142,12 @@ result_metrics = run_alignment_metric(
     beat_times=beat_output["beat_times"],
 )
 
-print("📊 Kết quả tính toán & căn chỉnh:", result_metrics)
-
 # ==== TÍNH % SIMILARITY ====
 similarity_percent = compute_similarity(result_metrics)
-print(f"🎯 Similarity giữa bản thu và bản gốc: {similarity_percent:.2f}%")
-
 result_metrics["similarity_percent"] = similarity_percent
-
 
 # ==== 8. LƯU JSON ====
 output_path = "beat_eval_system/output/result.json"
-
 
 def np_convert(o):
     """
@@ -175,8 +160,5 @@ def np_convert(o):
         return None
     return str(o)
 
-
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(result_metrics, f, indent=4, default=np_convert)
-
-print(f"🏁 Hoàn tất pipeline. Kết quả đã lưu tại: {output_path}")

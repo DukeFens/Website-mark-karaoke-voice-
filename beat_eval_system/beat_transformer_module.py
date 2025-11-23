@@ -58,11 +58,8 @@ def process_with_beat_transformer(audio_path):
         "tempo": float(tempo)
     }
 
-
 # ============================================================
 #  KIỂM THỬ TRỰC TIẾP MODULE
 # ============================================================
 if __name__ == "__main__":
     output = process_with_beat_transformer("beat_eval_system/output/preprocessed_original.wav")
-    print("Kết quả Beat Transformer:")
-    print(output)

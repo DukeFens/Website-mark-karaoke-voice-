@@ -38,7 +38,6 @@ def _hz_to_cents_safe(f_user_hz, f_ref_hz):
     cents = 1200.0 * np.log2(fu_safe / fr_safe)
     return cents  # giữ nguyên NaN ở vị trí không hợp lệ
 
-
 def _safe_mean(x):
     """Tính trung bình bỏ qua NaN."""
     x = np.asarray(x, dtype=np.float64)
@@ -47,7 +46,6 @@ def _safe_mean(x):
         return None
     return float(np.mean(x))
 
-
 def _safe_std(x):
     """Tính độ lệch chuẩn bỏ qua NaN."""
     x = np.asarray(x, dtype=np.float64)
@@ -55,7 +53,6 @@ def _safe_std(x):
     if x.size == 0:
         return None
     return float(np.std(x))
-
 
 # ============================================================
 #  CĂN KHUNG (FRAME MAPPING)
@@ -85,7 +82,6 @@ def frame_mapping(user_f0, ref_f0):
 
     return mapped
 
-
 # ============================================================
 #  CĂN CHỈNH TRÌNH TỰ (DTW ALIGNMENT)
 # ============================================================
@@ -109,9 +105,7 @@ def weighted_alignment(user_f0, ref_f0):
     distance, path = fastdtw(user, ref, dist=lambda a, b: abs(a - b))
     user_aligned = np.array([user[i] for i, _ in path], dtype=np.float64)
     ref_aligned = np.array([ref[j] for _, j in path], dtype=np.float64)
-
     return user_aligned, ref_aligned, float(distance)
-
 
 # ============================================================
 #  HÀM TRÍCH XUẤT ĐẶC TRƯNG (FEATURE HELPERS)
@@ -122,7 +116,6 @@ def compute_energy(y, hop_length=256, frame_length=1024):
     rms = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length, center=True)
     return rms.flatten()
 
-
 def compute_mfcc_mean(y, sr, hop_length=256, n_mfcc=13):
     """Tính giá trị trung bình của MFCC (đặc trưng âm sắc) theo thời gian."""
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, hop_length=hop_length)
@@ -130,11 +123,9 @@ def compute_mfcc_mean(y, sr, hop_length=256, n_mfcc=13):
         return None
     return np.mean(mfcc, axis=1)
 
-
 def extract_onsets_from_wave(y, sr, hop_length=256):
     """Trích xuất thời điểm bắt đầu nốt (onset) từ waveform bằng librosa."""
     return librosa.onset.onset_detect(y=y, sr=sr, hop_length=hop_length, units='time')
-
 
 # ============================================================
 #  TÍNH TOÁN CÁC CHỈ SỐ (METRIC COMPUTATION)
@@ -235,7 +226,7 @@ def compute_metrics(user_f0_aligned, ref_f0_aligned,
         metrics['rhythmic_variation'] = float(np.std(ioi))
     else:
         metrics['rhythmic_variation'] = None
-
+        
     return metrics
 
 

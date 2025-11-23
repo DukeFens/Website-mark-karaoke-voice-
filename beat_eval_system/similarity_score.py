@@ -74,7 +74,6 @@ def compute_similarity(metrics, weights=None, scales=None):
 
     return similarity_percent
 
-
 # === KIỂM TRA MODULE ===
 if __name__ == "__main__":
     # Ví dụ thử nghiệm
