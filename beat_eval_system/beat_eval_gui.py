@@ -109,8 +109,8 @@ class BeatEvalGUI:
                 json.dump(metrics, f, indent=4, default=np_convert)
 
             # --- Display in GUI ---
-            self.text_output.insert(tk.END, "✅ Pipeline complete!\n")
-            self.text_output.insert(tk.END, f"Results saved to: {output_path}\n\n")
+            self.text_output.insert(tk.END, "✅ Pipeline completed!\n")
+            self.text_output.insert(tk.END, f"Result can be found at: {output_path}\n\n")
             self.text_output.insert(tk.END, json.dumps(metrics, indent=4, default=np_convert))
             self.text_output.insert(tk.END, f"\n\n🎯 Similarity: {similarity_percent:.2f}%\n")
 
